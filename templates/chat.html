@@ -85,7 +85,6 @@
                 const messageId = selectedMessage.getAttribute('data-id');
                 const messageNickname = selectedMessage.getAttribute('data-nickname');
                 if (currentUser === messageNickname) {
-                    console.log(`Sending delete request for message ID: ${messageId}`);  // Debug
                     socket.emit('delete_message', { id: messageId });
                 } else {
                     alert('Вы можете удалять только свои сообщения.');
@@ -122,6 +121,12 @@
 
         socket.on('message_delete_failed', (data) => {
             alert('Сообщение не может быть удалено.');
+        });
+
+        // Обработка события очистки чата
+        socket.on('chat_cleared', () => {
+            const chatDiv = document.getElementById('chat-messages');
+            chatDiv.innerHTML = '';
         });
 
         window.addEventListener('load', () => {
