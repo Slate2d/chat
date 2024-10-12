@@ -1,0 +1,116 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden; /* Отключение прокрутки */
+}
+
+#login, #chat {
+    width: 80%;
+    height: 80%;
+    background: white;
+    border: 1px solid #ccc;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+#nickname, #message {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    border: none;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+#chat-messages {
+    height: 70%;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+.message {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.message b {
+    color: #007bff;
+}
+
+.message.selected {
+    background-color: #f1f1f1;
+}
+
+#deleteButton {
+    background-color: #dc3545;
+}
+
+#deleteButton:hover {
+    background-color: #c82333;
+}
+
+/* Медиазапросы для адаптивности */
+@media (max-width: 768px) {
+    #login, #chat {
+        width: 90%;
+        height: 90%;
+        padding: 10px;
+    }
+
+    #chat-messages {
+        height: 60%;
+    }
+
+    #nickname, #message {
+        padding: 8px;
+        font-size: 16px;
+    }
+
+    button {
+        padding: 10px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    #login, #chat {
+        width: 95%;
+        height: 95%;
+        padding: 5px;
+    }
+
+    #chat-messages {
+        height: 55%;
+    }
+
+    #nickname, #message {
+        padding: 6px;
+        font-size: 14px;
+    }
+
+    button {
+        padding: 8px;
+        font-size: 14px;
+    }
+}
