@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
 import re
@@ -15,7 +15,7 @@ class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nickname = db.Column(db.String(50))
     msg = db.Column(db.String(200))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
 
 
 class Nickname(db.Model):
@@ -137,7 +137,7 @@ def handle_disconnect():
 def delete_message(data):
     message_id = data['id']
     message = Message.query.get(message_id)
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     if message and now - message.timestamp < timedelta(minutes=5):
         db.session.delete(message)
         db.session.commit()
