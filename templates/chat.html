@@ -8,7 +8,7 @@
 </head>
 <body>
 <div id="login">
-    <input type="text" id="nickname" placeholder="Введите никнейм">
+    <input type="text" id="nickname" placeholder="Введите никнейм" required>
     <button id="loginButton">Войти</button>
 </div>
 <div id="chat" style="display:none;">
@@ -31,7 +31,6 @@
     window.addEventListener('load', () => {
         const savedNickname = localStorage.getItem('nickname');
         if (savedNickname) {
-            // Проверка никнейма в базе данных
             fetch(`/check_nickname?nickname=${savedNickname}`)
                 .then(response => response.json())
                 .then(data => {
@@ -41,10 +40,8 @@
                         document.getElementById('chat').style.display = 'block';
                         loadMessages();
                     } else {
-                        // Никнейм не существует, удаляем и перенаправляем
-                        // alert('Ваш никнейм был удалён. Пожалуйста, войдите снова.');
                         localStorage.removeItem('nickname');
-                        window.location.href = '/chat'; // Перенаправляем на страницу логина
+                        window.location.href = '/chat';
                     }
                 })
                 .catch(error => console.error('Error checking nickname:', error));
@@ -79,6 +76,10 @@
 
     document.getElementById('loginButton').addEventListener('click', () => {
         const nickname = document.getElementById('nickname').value;
+        if (!nickname) {
+            alert("Nickname cannot be empty")
+            return
+        }
         fetch('/login', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -108,7 +109,41 @@
         }
     });
 
+    document.getElementById('nickname').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            const nickname = document.getElementById('nickname').value;
+            sendLogin(nickname)
+
+        }
+    });
+
+    function sendLogin(nickname) {
+        if (!nickname) {
+            alert("Message cannot be empty")
+            return
+        }
+        fetch('/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({nickname})
+        }).then(response => response.json()).then(data => {
+            if (data.status === 'success') {
+                currentUser = nickname;
+                localStorage.setItem('nickname', nickname);
+                document.getElementById('login').style.display = 'none';
+                document.getElementById('chat').style.display = 'block';
+                loadMessages();
+            } else {
+                alert('Никнейм уже используется. Попробуйте другой.');
+            }
+        }).catch(error => console.error('Login error:', error));
+    }
+
     function sendMessage(message) {
+        if (!message) {
+            alert("Message cannot be empty")
+            return
+        }
         socket.emit('new_message', {nickname: currentUser, msg: message});
         document.getElementById('message').value = '';
     }
@@ -160,7 +195,6 @@
         alert('Сообщение не может быть удалено.');
     });
 
-    // Обработка события очистки чата
     socket.on('chat_cleared', () => {
         const chatDiv = document.getElementById('chat-messages');
         chatDiv.innerHTML = '';
@@ -168,7 +202,6 @@
 
     socket.on('mentioned', (data) => {
         if (data.user === currentUser) {
-            // Показать уведомление об упоминании
             const mentionDiv = document.getElementById('mention-notification');
             const mentionText = document.getElementById('mention-text');
             mentionText.textContent = `Вас упомянул ${data.nickname}: ${data.message}`;
@@ -181,7 +214,6 @@
             console.log("sound played")
             alert(`Вас упомянули в сообщении: ${data.nickname}: ${data.message}`);
 
-            // Убираем уведомление через 5 секунд
             setTimeout(() => {
                 mentionDiv.style.display = 'none';
             }, 5000);

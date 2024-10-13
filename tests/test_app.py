@@ -16,7 +16,6 @@ def test_login(client):
     response = client.post('/login', json={'nickname': 'testuser'})
     assert response.json['status'] == 'success'
 
-    # Проверка, что никнейм добавлен в базу данных
     existing_nickname = Nickname.query.filter_by(nickname='testuser').first()
     assert existing_nickname is not None
 
@@ -26,7 +25,6 @@ def test_get_messages(client):
     db.session.add(message)
     db.session.commit()
 
-    # Запрос на получение сообщений
     response = client.get('/get_messages')
     assert response.status_code == 200
     assert len(response.json['messages']) > 0
@@ -37,12 +35,9 @@ def test_clear_chat(client):
     db.session.add(message)
     db.session.commit()
 
-    # Проверка перед очисткой
     assert Message.query.count() == 1
 
-    # Очистка чата
     response = client.post('/clear_chat', json={'secret': 'fwenfwo-23498##12ojdp_emfw0o'})
     assert response.json['status'] == 'success'
 
-    # Проверка после очистки
     assert Message.query.count() == 0
