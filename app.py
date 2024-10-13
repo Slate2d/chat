@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 from datetime import datetime, timedelta, timezone
 from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
+
 import re
 
 app = Flask(__name__)
@@ -15,7 +16,7 @@ class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nickname = db.Column(db.String(50))
     msg = db.Column(db.String(200))
-    timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    timestamp = db.Column(db.DateTime, default=datetime.now(tz=None))
 
 
 class Nickname(db.Model):
@@ -42,10 +43,10 @@ with app.app_context():
     db.create_all()
     print("SERVER STARTED----------------")
     # add_nicknames()
-    db.session.query(Nickname).delete()
-    db.session.commit()
-    all_nicknames = Nickname.query.all()  # Получаем все записи из таблицы Nickname
-    nickname_list = [nickname.nickname for nickname in all_nicknames]  # Список никнеймов
+    # db.session.query(Nickname).delete()
+    # db.session.commit()
+    all_nicknames = db.session.query(Nickname).all()
+    nickname_list = [nickname.nickname for nickname in all_nicknames]
     print("Nicknames in the database:", nickname_list)
 
 
@@ -56,7 +57,7 @@ def chat():
 
 @app.route('/get_messages')
 def get_messages():
-    messages = Message.query.order_by(Message.timestamp).all()
+    messages = db.session.query(Message).order_by(Message.timestamp).all()
     return jsonify({'messages': [
         {'id': msg.id, 'nickname': msg.nickname, 'msg': msg.msg, 'timestamp': msg.timestamp.isoformat()} for msg in
         messages]})
@@ -64,7 +65,7 @@ def get_messages():
 
 @app.route('/ping')
 def ping():
-    return '', 200  # Возвращает код 200 OK
+    return '', 200
 
 
 @app.route('/login', methods=['POST'])
@@ -73,7 +74,7 @@ def login():
     usernickname = data.get('nickname')
 
     # Проверка, есть ли никнейм в базе данных
-    existing_nickname = Nickname.query.filter_by(nickname=usernickname).first()
+    existing_nickname = db.session.query(Nickname).filter_by(nickname=usernickname).first()
 
     if existing_nickname:
         return jsonify({'status': 'fail', 'message': 'Никнейм уже используется.'})
@@ -89,7 +90,7 @@ def login():
 @app.route('/clear_chat', methods=['POST'])
 def clear_chat():
     if request.json.get('secret') == 'fwenfwo-23498##12ojdp_emfw0o':  # Защита маршрута
-        Message.query.delete()
+        db.session.query(Message).delete()
         db.session.commit()
         socketio.emit('chat_cleared')  # Emit событие очистки чата
         return jsonify({'status': 'success', 'message': 'Чат очищен'})
@@ -115,9 +116,10 @@ def new_message(data):
     db.session.add(message)
     db.session.commit()
     emit('message', {'id': message.id, 'nickname': nickname, 'msg': msg}, broadcast=True)
-    all_nicknames = Nickname.query.all()  # Получаем все записи из таблицы Nickname
-    nickname_list = [nickname.nickname for nickname in all_nicknames]  # Список никнеймов
+    all_nicknames = db.session.query(Nickname).all()
+    nickname_list = [nickname.nickname for nickname in all_nicknames]
     print("Nicknames in the database:", nickname_list)
+
     # Проверка упоминаний никнеймов
     mentioned_users = re.findall(r'@(\w+)', msg)
     for user in mentioned_users:
@@ -136,14 +138,17 @@ def handle_disconnect():
 @socketio.on('delete_message')
 def delete_message(data):
     message_id = data['id']
-    message = Message.query.get(message_id)
-    now = datetime.now(timezone.utc)
-    if message and now - message.timestamp < timedelta(minutes=5):
+    session = db.session()
+    message = session.get(Message, message_id)
+    now = datetime.now(tz=None)
+    diff = now - message.timestamp
+    if message and diff < timedelta(minutes=5):
         db.session.delete(message)
         db.session.commit()
         emit('message_deleted', {'id': message_id}, broadcast=True)
     else:
         emit('message_delete_failed', {'id': message_id}, broadcast=True)
+    session.close()
 
 
 if __name__ == "__main__":

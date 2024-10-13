@@ -32,9 +32,7 @@ def test_get_messages(client):
     assert len(response.json['messages']) > 0
     assert response.json['messages'][0]['msg'] == 'Hello, world!'
 
-
 def test_clear_chat(client):
-    # Добавляем сообщение
     message = Message(nickname='testuser', msg='Message to clear')
     db.session.add(message)
     db.session.commit()
