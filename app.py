@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, url_for
 from datetime import datetime, timedelta, timezone
 from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
@@ -43,8 +43,9 @@ with app.app_context():
     db.create_all()
     print("SERVER STARTED----------------")
     # add_nicknames()
-    # db.session.query(Nickname).delete()
-    # db.session.commit()
+
+    db.session.query(Nickname).delete()
+    db.session.commit()
     all_nicknames = db.session.query(Nickname).all()
     nickname_list = [nickname.nickname for nickname in all_nicknames]
     print("Nicknames in the database:", nickname_list)
@@ -73,7 +74,6 @@ def login():
     data = request.json
     usernickname = data.get('nickname')
 
-    # Проверка, есть ли никнейм в базе данных
     existing_nickname = db.session.query(Nickname).filter_by(nickname=usernickname).first()
 
     if existing_nickname:
@@ -84,6 +84,11 @@ def login():
     db.session.add(new_nickname)
     db.session.commit()
 
+    join_message = f"{usernickname} присоединился к чату."
+    new_message = Message(nickname="Система", msg=join_message)
+    db.session.add(new_message)
+    db.session.commit()
+    socketio.emit('new_message', {'nickname': "Система", 'msg': join_message})
     return jsonify({'status': 'success'})
 
 
